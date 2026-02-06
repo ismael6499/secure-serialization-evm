@@ -24,6 +24,9 @@ contract ABIEncoderDemo {
         address user, 
         uint256 amount
     );
+
+    // Custom Errors
+    error ArrayLengthMismatch();
     
 
     /*
@@ -107,7 +110,7 @@ contract ABIEncoderDemo {
         uint256 deadline
     ) external returns (bytes memory encodedData) {
 
-        require(path.length == amount.length, "Array length mismatch");
+        if (path.length != amount.length) revert ArrayLengthMismatch();
 
         //Encode the path
         bytes memory pathData;
@@ -290,7 +293,7 @@ contract ABIEncoderDemo {
         address[] calldata pools, 
         uint256[] calldata weights
     ) external returns(bytes memory strategyData){
-        require(pools.length == weights.length, "Array lengths mismatch");
+        if (pools.length != weights.length) revert ArrayLengthMismatch();
 
         // Encode the strategy name
         strategyData = abi.encodePacked(strategyName);
