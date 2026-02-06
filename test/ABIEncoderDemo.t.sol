@@ -289,4 +289,26 @@ contract ABIEncoderDemoTest is Test {
         );
         assertEq(data, expectedData);
     }
+
+    // --- Added for Research/Benchmark purposes ---
+
+    function test_encodeStandard_ReturnsCorrectEncoding() external {
+        address token = address(0x1234);
+        uint256 amount = 1 ether;
+
+        bytes memory data = abiEncoderDemo.encodeStandard(token, amount);
+        bytes memory expected = abi.encode(token, amount);
+
+        assertEq(data, expected, "Standard encoding should match abi.encode");
+    }
+
+    function test_encodePacked_ReturnsCorrectPackedEncoding() external {
+        address token = address(0x1234);
+        uint256 amount = 1 ether;
+
+        bytes memory data = abiEncoderDemo.encodePacked(token, amount);
+        bytes memory expected = abi.encodePacked(token, amount);
+
+        assertEq(data, expected, "Packed encoding should match abi.encodePacked");
+    }
 }

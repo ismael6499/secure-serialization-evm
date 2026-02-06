@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity 0.8.24;
 
 
 /*
@@ -447,5 +447,23 @@ contract ABIEncoderDemo {
         );
 
         emit EncodedData(keccak256(trailingStopData), trailingStopData);
+    }
+
+    // --- Added for Research/Benchmark purposes ---
+
+    /**
+     * @notice Returns standard ABI encoded data (32-byte padded).
+     * @dev Use this for collision resistance or inter-contract calls.
+     */
+    function encodeStandard(address token, uint256 amount) external pure returns (bytes memory) {
+        return abi.encode(token, amount);
+    }
+
+    /**
+     * @notice Returns packed encoded data (minimal size).
+     * @dev Use this for signature generation or tight storage packing.
+     */
+    function encodePacked(address token, uint256 amount) external pure returns (bytes memory) {
+        return abi.encodePacked(token, amount);
     }
 }

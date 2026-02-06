@@ -1,66 +1,59 @@
-## Foundry
+# 🧶 EVM Serialization Primitives: ABI Encoding Patterns
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?style=flat-square&logo=solidity)
+![EVM](https://img.shields.io/badge/Topic-Low_Level_Bytes-red?style=flat-square)
+![Gas](https://img.shields.io/badge/Gas-Packed_vs_Standard-green?style=flat-square)
 
-Foundry consists of:
+A technical reference implementation exploring the nuances of data serialization on the Ethereum Virtual Machine.
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+This project isolates the mechanisms of **ABI Encoding** (`abi.encode`) versus **Packed Encoding** (`abi.encodePacked`), providing a benchmark for developers to understand the trade-offs between cryptographic integrity (collision resistance) and gas efficiency when preparing data for hashing (`keccak256`) or external calls.
 
-## Documentation
+## 🏗 Architecture & Design Decisions
 
-https://book.getfoundry.sh/
+### 1. Serialization Strategy (Standard vs. Packed)
+- **Standard Encoding (`abi.encode`):**
+  - Utilized for inter-contract calls to strictly adhere to the ABI specification, ensuring 32-byte padding for static types.
+  - **Use Case:** Validated its necessity for preventing **Hash Collisions** when dealing with dynamic types (e.g., `(string, string)`), where packed encoding fails to distinguish boundaries.
+- **Packed Encoding (`abi.encodePacked`):**
+  - Implemented for specific gas-optimization scenarios where data layout compactness outweighs ABI compliance.
+  - **Optimization:** Demonstrates significant gas reduction by removing padding zeroes, critical for generating cheap commitments or signatures within the contract logic.
 
-## Usage
+### 2. Cryptographic Integrity
+- **Collision Analysis:**
+  - The repository includes test cases specifically designed to demonstrate how `abi.encodePacked("a", "bc")` produces the exact same hash as `abi.encodePacked("ab", "c")`.
+  - **Security Pattern:** This serves as a negative test case to justify the architectural decision of using `abi.encode` for hashing distinct dynamic parameters, a common vulnerability in signature verification schemas.
 
-### Build
+### 3. String & Bytes Manipulation
+- **Type Casting:**
+  - Demonstrates the low-level conversion of `string` to `bytes` for raw manipulation. This is foundational for understanding how high-level Solidity types translate to EVM memory allocation.
 
-```shell
-$ forge build
-```
+## 🧪 Testing Strategy (Foundry)
 
-### Test
+The test suite validates the binary output of the encoding functions:
 
-```shell
-$ forge test
-```
+- **Byte-Level Assertions:**
+  - Unlike standard logic tests, this suite asserts the exact hexadecimal output of the encoding functions to verify padding behavior.
+- **Collision Fuzzing:**
+  - Validates that `encodePacked` produces identical byte streams for ambiguous inputs, reinforcing the security warnings documented in the codebase.
 
-### Format
+## 🛠 Tech Stack
 
-```shell
-$ forge fmt
-```
+* **Core:** Solidity `^0.8.24`
+* **Focus:** `abi.encode`, `abi.encodePacked`, `keccak256`
+* **Tooling:** Foundry (Cast/Forge)
 
-### Gas Snapshots
+## 📝 Serialization Interface
 
-```shell
-$ forge snapshot
-```
+The contract exposes primitives to inspect EVM memory layout:
 
-### Anvil
+```solidity
+// Returns 32-byte padded data (Safe for hashing dynamic types)
+function encodeStandard(uint256 number, address addr) external pure returns (bytes memory) {
+    return abi.encode(number, addr);
+}
 
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+// Returns minimal byte stream (Gas efficient, collision prone)
+function encodePacked(uint256 number, address addr) external pure returns (bytes memory) {
+    return abi.encodePacked(number, addr);
+}
 ```
